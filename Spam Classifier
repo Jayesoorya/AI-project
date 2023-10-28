@@ -1,1 +1,89 @@
+import argparse
+import math
+
+class NaiveBayesSpamFilter:
+    def __init__(self, init_prob_spam=0.5, occurence_threshold=10, score_threshold=0.9, phrase_length=1):
+        self.init_prob_spam = init_prob_spam
+        self.occurence_threshold = occurence_threshold
+        self.score_threshold = score_threshold
+        self.phrase_length = phrase_length
+
+        # Spam and ham word counts
+        self.spam_word_counts = {}
+        self.ham_word_counts = {}
+
+        # Total number of spam and ham messages
+        self.num_spam = 0
+        self.num_ham = 0
+
+    def train(self, spam_examples, ham_examples):
+        # Count the number of times each word appears in the spam and ham examples
+        for message in spam_examples:
+            self.count_words(message, self.spam_word_counts)
+            self.num_spam += 1
+
+        for message in ham_examples:
+            self.count_words(message, self.ham_word_counts)
+            self.num_ham += 1
+
+    def classify(self, message):
+        # Calculate the spam score of the message
+        spam_score = self.calculate_spam_score(message)
+
+        # If the spam score is above the threshold, the message is classified as spam
+        if spam_score > self.score_threshold:
+            return True
+        else:
+            return False
+
+    def count_words(self, message, word_counts):
+        # Split the message into words
+        words = message.split()
+
+        # For each word in the message, increment the count in the word_counts dictionary
+        for word in words:
+            if word in word_counts:
+                word_counts[word] += 1
+            else:
+                word_counts[word] = 1
+
+    def calculate_spam_score(self, message):
+        # Split the message into words
+        words = message.split()
+
+        # Calculate the probability of the message being spam
+        spam_score = math.log(self.init_prob_spam)
+
+        # For each word in the message, add the log probability of the word appearing in spam
+        for word in words:
+            spam_score += math.log(self.get_word_spambicity(word))
+
+        return spam_score
+
+    def get_word_spambicity(self, word):
+        # Calculate the probability of the word appearing in spam
+        spam_prob = (self.spam_word_counts.get(word, 0) + 1) / (self.num_spam + self.occurence_threshold)
+
+        # Calculate the probability of the word appearing in ham
+        ham_prob = (self.ham_word_counts.get(word, 0) + 1) / (self.num_ham + self.occurence_threshold)
+
+        # Return the ratio of the spam probability to the ham probability
+        return spam_prob / ham_prob
+
+if __name__ == "__main__":
+    # Create a new spam filter
+    spam_filter = NaiveBayesSpamFilter()
+
+    # Train the filter on the spam and ham examples
+    spam_filter.train("spam_examples", "ham_examples")
+
+    # Classify a new message
+    message = "This is a new message."
+    is_spam = spam_filter.classify(message)
+
+    # If the message is classified as spam, print a message
+    if is_spam:
+        print("The message is spam.")
+    else:
+        print("The message is not spam.")
 
